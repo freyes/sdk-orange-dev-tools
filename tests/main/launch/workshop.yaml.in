@@ -1,0 +1,4 @@
+name: test-ubuntu-dev-tools
+base: ${BASE}
+sdks:
+  - name: try-ubuntu-dev-tools
