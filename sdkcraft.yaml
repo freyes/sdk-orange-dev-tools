@@ -1,15 +1,19 @@
-name: ubuntu-dev-tools
-version: '0.1'      # just for humans. Semantic versioning is recommended
-summary: Single-line elevator pitch for your amazing SDK    # 79 char long summary
+name: orange-dev-tools
+version: "0.1"
+summary: Ubuntu packaging development environment
 description: |
-  This is ubuntu-dev-tools's description. You have a paragraph or two to tell the
-  most important story about it. Keep it under 100 words though,
-  we live in tweetspace.
-license: GPL-3.0    # your SDK's SPDX license
-platforms:          # The platforms this SDK should be built on and run on
-  ubuntu@22.04:amd64:
+  Workshop SDK providing sbuild, mmdebstrap, dput, mini-dinstall, and git-ubuntu
+  for local Ubuntu package building. Supports dynamic suite discovery via
+  distro-info and includes a create-sbuild-chroots action for pre-building
+  sbuild chroot tarballs on demand.
+license: GPL-3.0
+platforms:
   ubuntu@24.04:amd64:
+  ubuntu@26.04:amd64:
 
 parts:
-  my-part:
+  orange-dev-tools:
     plugin: nil
+    override-build: |
+      mkdir -p "$CRAFT_PART_INSTALL/bin"
+      install -m 0755 "$CRAFT_PROJECT_DIR/bin/create-sbuild-chroots" "$CRAFT_PART_INSTALL/bin/create-sbuild-chroots"
