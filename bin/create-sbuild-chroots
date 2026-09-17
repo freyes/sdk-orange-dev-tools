@@ -75,6 +75,7 @@ for series in "${series_list[@]}"; do
     mkdir -p "$cache_dir"
 
     mmdebstrap \
+        --mode=unshare \
         --variant=buildd \
         --components=main,universe,multiverse \
         --include=apt,adduser,ca-certificates \
