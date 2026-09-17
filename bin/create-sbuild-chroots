@@ -1,0 +1,86 @@
+#!/bin/bash
+set -euo pipefail
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [--all] [<series>...]
+
+Create sbuild chroot tarballs using mmdebstrap.
+
+Flags:
+  --all       Build chroots for all supported Ubuntu series
+  --help      Show this help message and exit
+
+Arguments:
+  <series>    One or more Ubuntu series codenames (e.g., noble jammy)
+
+If no series are given and --all is not specified, build for the current
+host series only.
+EOF
+}
+
+# Parse arguments
+all=false
+series_args=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help)
+            usage
+            exit 0
+            ;;
+        --all)
+            all=true
+            shift
+            ;;
+        --*)
+            echo "Error: Unknown flag: $1" >&2
+            usage
+            exit 1
+            ;;
+        *)
+            series_args+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Determine which series to build
+if [[ "$all" == true ]]; then
+    if [[ ${#series_args[@]} -gt 0 ]]; then
+        echo "Error: --all cannot be combined with explicit series arguments" >&2
+        exit 1
+    fi
+    mapfile -t series_list < <(distro-info --supported)
+elif [[ ${#series_args[@]} -gt 0 ]]; then
+    series_list=("${series_args[@]}")
+else
+    # shellcheck source=/dev/null
+    . /etc/os-release
+    series_list=("$VERSION_CODENAME")
+fi
+
+arch=$(dpkg --print-architecture)
+cache_dir="$HOME/.cache/sbuild"
+
+for series in "${series_list[@]}"; do
+    tarball="${cache_dir}/${series}-${arch}.tar"
+
+    if [[ -f "$tarball" ]]; then
+        echo "Skipping ${series}: tarball already exists at ${tarball}" >&2
+        continue
+    fi
+
+    echo "Creating chroot for ${series} (${arch})..." >&2
+    mkdir -p "$cache_dir"
+
+    mmdebstrap \
+        --variant=buildd \
+        --components=main,universe,multiverse \
+        --include=apt,adduser,ca-certificates \
+        "${series}" \
+        "${tarball}" \
+        http://archive.ubuntu.com/ubuntu
+
+    echo "Done: ${tarball}" >&2
+done
