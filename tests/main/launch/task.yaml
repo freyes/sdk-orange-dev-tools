@@ -1,4 +1,4 @@
-summary: Launch workshop with ubuntu-dev-tools SDK
+summary: Launch workshop with orange-dev-tools SDK
 
 prepare: |
   envsubst '${BASE}' <workshop.yaml.in >workshop.yaml
@@ -8,7 +8,60 @@ restore: |
   workshop remove || true
 
 execute: |
-  # workshop exec -- ubuntu-dev-tools --version
+  workshop exec -- bash -lc 'set -euo pipefail
+  . /etc/os-release
+  
+  # (a) Copy fixtures from mounted project dir
+  rm -rf /project/build-test
+  mkdir -p /project/build-test
+  cp -a /project/fixtures/hello-world /project/fixtures/hello-dep /project/build-test/
+  
+  # (b) Verify tools
+  command -v sbuild
+  command -v dput
+  command -v mmdebstrap
+  command -v distro-info
+  command -v create-sbuild-chroots
+  
+  # (c) Verify configs
+  test -f ~/.sbuildrc
+  test -f ~/.dput.cf
+  test -f ~/.mini-dinstall.conf
+  
+  # (d) Structural suite check
+  distro-info --supported | while read s; do
+    grep -Fx "[$s]" ~/.mini-dinstall.conf || exit 1
+  done
+  
+  # (e) sbuild config acceptance
+  sbuild --help >/dev/null 2>&1
+  
+  # (f) Set changelog distribution to current suite
+  cd /project/build-test/hello-world
+  dch --release --distribution "$VERSION_CODENAME" --force-distribution ""
+  cd /project/build-test/hello-dep
+  dch --release --distribution "$VERSION_CODENAME" --force-distribution ""
+  
+  # (g) Create chroot
+  create-sbuild-chroots "$VERSION_CODENAME"
+  
+  # (h) Build hello-world
+  cd /project/build-test/hello-world
+  dpkg-buildpackage -us -uc
+  
+  # (i) Upload to local repo
+  dput local /project/build-test/hello-world_0.1_*.changes
+  
+  # (j) Verify Packages index
+  test -f /project/local-repo/$VERSION_CODENAME/Packages
+  
+  # (k) Build hello-dep against local repo
+  cd /project/build-test/hello-dep
+  sbuild --dist=$VERSION_CODENAME
+  
+  # (l) Assert hello-dep .deb produced
+  test -f /project/build-test/hello-dep_*.deb
+  '
 
 debug: |
   workshop tasks

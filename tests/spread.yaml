@@ -1,4 +1,4 @@
-project: ubuntu-dev-tools
+project: orange-dev-tools
 
 path: /home/ubuntu/project
 
@@ -13,5 +13,5 @@ suites:
   main/:
     summary: Test SDK inside workshops with different bases
     environment:
-      BASE/jammy: ubuntu@22.04
       BASE/noble: ubuntu@24.04
+      BASE/resolute: ubuntu@26.04

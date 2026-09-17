@@ -1,4 +1,8 @@
-name: test-ubuntu-dev-tools
+name: test-orange-dev-tools
 base: ${BASE}
 sdks:
-  - name: try-ubuntu-dev-tools
+  - name: try-orange-dev-tools
+
+actions:
+  create-sbuild-chroots: |
+    create-sbuild-chroots "$@"

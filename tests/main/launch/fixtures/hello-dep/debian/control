@@ -1,0 +1,9 @@
+Source: hello-dep
+Section: misc
+Priority: optional
+Maintainer: Test <test@example.com>
+Build-Depends: hello-world, debhelper-compat (= 13)
+
+Package: hello-dep
+Architecture: all
+Description: Test fixture that depends on hello-world

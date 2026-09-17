@@ -1,0 +1,5 @@
+# Build artifacts
+*.sdk
+
+# OpenCode orchestration state
+.omo/

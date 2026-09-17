@@ -1,0 +1,9 @@
+Source: hello-world
+Section: misc
+Priority: optional
+Maintainer: Test <test@example.com>
+Build-Depends: debhelper-compat (= 13)
+
+Package: hello-world
+Architecture: all
+Description: Test fixture for orange-dev-tools SDK
