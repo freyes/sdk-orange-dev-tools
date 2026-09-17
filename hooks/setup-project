@@ -1,1 +1,69 @@
-# uv sync
+#!/bin/bash
+set -e
+
+# Determine sbuild version for version-gated keys
+SBUILD_VER=$(dpkg-query -W -f='${Version}' sbuild 2>/dev/null || echo "0")
+. /etc/os-release  # get VERSION_CODENAME
+
+# --- (a) Write ~/.sbuildrc ---
+cat > ~/.sbuildrc <<SBUILDRCEOF
+\$chroot_mode = 'unshare';
+\$extra_repositories = [
+    'deb [trusted=yes] file:///project/local-repo $VERSION_CODENAME/',
+];
+\$unshare_bind_mounts = [
+    { directory => '/project/local-repo', mountpoint => '/project/local-repo' },
+];
+SBUILDRCEOF
+
+# Version-gated experimental keys (Resolute+ only)
+if dpkg --compare-versions "$SBUILD_VER" ge 0.87; then
+    cat >> ~/.sbuildrc <<SBUILDRCEOF
+\$unshare_mmdebstrap_auto_create = 1;
+\$unshare_mmdebstrap_keep_tarball = 1;
+\$unshare_mmdebstrap_extra_args = [
+SBUILDRCEOF
+    # One entry per distro-info --supported series
+    distro-info --supported | while read series; do
+        echo "    '${series}' => ['--components=main,universe,multiverse', 'http://archive.ubuntu.com/ubuntu']," >> ~/.sbuildrc
+    done
+    echo "];" >> ~/.sbuildrc
+fi
+
+# --- (b) Write ~/.dput.cf ---
+cat > ~/.dput.cf <<DPUTEOF
+[local]
+fqdn = localhost
+method = local
+incoming = /project/local-repo/mini-dinstall/incoming
+allow_unsigned_uploads = 1
+post_upload_command = mini-dinstall --batch
+DPUTEOF
+
+# --- (c) Write ~/.mini-dinstall.conf ---
+cat > ~/.mini-dinstall.conf <<MINIDINSTALLEOF
+[DEFAULT]
+architectures = all, amd64
+archivedir = /project/local-repo
+use_dnotify = 0
+verify_sigs = 0
+mail_on_success = 0
+archive_style = flat
+poll_time = 40
+mail_log_level = NONE
+generate_release = 1
+release_description = Local orange-dev-tools packages
+MINIDINSTALLEOF
+
+# One [<series>] section per distro-info --supported
+distro-info --supported | while read series; do
+    echo "" >> ~/.mini-dinstall.conf
+    echo "[$series]" >> ~/.mini-dinstall.conf
+done
+
+# --- (d) Create local repo directories ---
+mkdir -p /project/local-repo/mini-dinstall/incoming
+
+# --- (e) Append to /project/.gitignore (idempotent) ---
+touch /project/.gitignore
+grep -qxF 'local-repo/' /project/.gitignore || echo 'local-repo/' >> /project/.gitignore

@@ -1,0 +1,35 @@
+#!/bin/bash
+set -e
+
+# Resolve workshop user home (check-health runs as root, but configs are per-user)
+WORKSHOP_HOME=$(getent passwd 1000 | cut -d: -f6)
+
+# Check critical tools on PATH
+for tool in sbuild dpkg-buildpackage dput mini-dinstall mmdebstrap distro-info; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        workshopctl set-health error "$tool not found"
+        exit 0
+    fi
+done
+
+# Check git-ubuntu separately (optional — log warning if missing, do NOT fail)
+if ! git ubuntu --version >/dev/null 2>&1; then
+    echo "WARN: git-ubuntu snap not available" >&2
+fi
+
+# Check config files exist
+for cfg in "$WORKSHOP_HOME/.sbuildrc" "$WORKSHOP_HOME/.dput.cf" "$WORKSHOP_HOME/.mini-dinstall.conf" "/etc/dput.cf"; do
+    if [ ! -f "$cfg" ]; then
+        workshopctl set-health error "$cfg missing"
+        exit 0
+    fi
+done
+
+# Check local repo directory exists
+if [ ! -d /project/local-repo/mini-dinstall/incoming ]; then
+    workshopctl set-health error "/project/local-repo/mini-dinstall/incoming missing"
+    exit 0
+fi
+
+# All checks passed
+workshopctl set-health okay
