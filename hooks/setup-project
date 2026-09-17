@@ -24,7 +24,7 @@ if dpkg --compare-versions "$SBUILD_VER" ge 0.87; then
 \$unshare_mmdebstrap_extra_args = [
 SBUILDRCEOF
     # One entry per distro-info --supported series
-    distro-info --supported | while read series; do
+    distro-info --supported | while read -r series; do
         echo "    '${series}' => ['--components=main,universe,multiverse', 'http://archive.ubuntu.com/ubuntu']," >> ~/.sbuildrc
     done
     echo "];" >> ~/.sbuildrc
@@ -56,7 +56,7 @@ release_description = Local orange-dev-tools packages
 MINIDINSTALLEOF
 
 # One [<series>] section per distro-info --supported
-distro-info --supported | while read series; do
+distro-info --supported | while read -r series; do
     echo "" >> ~/.mini-dinstall.conf
     echo "[$series]" >> ~/.mini-dinstall.conf
 done
