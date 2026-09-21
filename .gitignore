@@ -3,3 +3,6 @@
 
 # OpenCode orchestration state
 .omo/
+
+# Spread test reuse config (environment-specific, contains credentials)
+tests/.spread-reuse.yaml
