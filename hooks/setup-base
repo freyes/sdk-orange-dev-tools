@@ -14,6 +14,12 @@ apt-get install -y sbuild debhelper devscripts ubuntu-dev-tools dpkg-dev \
     build-essential mmdebstrap dput mini-dinstall distro-info schroot \
     debootstrap uidmap software-properties-common
 
+# Add workshop user to the sbuild group (idempotent)
+WORKSHOP_USER=$(getent passwd 1000 | cut -d: -f1)
+if [ -n "$WORKSHOP_USER" ] && ! id -nG "$WORKSHOP_USER" | grep -qw sbuild; then
+    usermod -aG sbuild "$WORKSHOP_USER"
+fi
+
 # Install git-ubuntu snap (best-effort — do NOT fail the hook if snap install fails)
 command -v git-ubuntu >/dev/null 2>&1 || snap install git-ubuntu --classic 2>/dev/null || \
     echo "WARN: git-ubuntu snap install failed — snapd may not be available"
