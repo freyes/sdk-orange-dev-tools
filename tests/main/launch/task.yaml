@@ -22,44 +22,50 @@ execute: |
   command -v mmdebstrap
   command -v distro-info
   command -v create-sbuild-chroots
+  test -x /usr/sbin/squid
   
   # (c) Verify configs
   test -f ~/.sbuildrc
   test -f ~/.dput.d/profiles/local.json
   test -f ~/.mini-dinstall.conf
+  test -f /etc/squid/squid.conf
+  test -f /etc/apt/apt.conf.d/90proxy
   
-  # (d) Structural suite check
+  # (d) Verify squid proxy is listening
+  (echo > /dev/tcp/127.0.0.1/3128) 2>/dev/null
+  
+  # (e) Structural suite check
   distro-info --supported | while read s; do
     grep -Fx "[$s]" ~/.mini-dinstall.conf || exit 1
   done
   
-  # (e) sbuild config acceptance
+  # (f) sbuild config acceptance
   sbuild --help >/dev/null 2>&1
   
-  # (f) Set changelog distribution to current suite
+  # (g) Set changelog distribution to current suite
   cd /project/build-test/hello-world
   dch --release --distribution "$VERSION_CODENAME" --force-distribution ""
   cd /project/build-test/hello-dep
   dch --release --distribution "$VERSION_CODENAME" --force-distribution ""
   
-  # (g) Create chroot
+  # (h) Create chroot
   create-sbuild-chroots "$VERSION_CODENAME"
   
-  # (h) Build hello-world
+  # (i) Build hello-world
   cd /project/build-test/hello-world
   dpkg-buildpackage -us -uc
   
-  # (i) Upload to local repo
+  # (j) Upload to local repo
   dput local /project/build-test/hello-world_0.1_*.changes
   
-  # (j) Verify Packages index
+  # (k) Verify Packages index
   test -f /project/local-repo/$VERSION_CODENAME/Packages
   
-  # (k) Build hello-dep against local repo
+  # (l) Build hello-dep against local repo
   cd /project/build-test/hello-dep
   sbuild --dist=$VERSION_CODENAME
   
-  # (l) Assert hello-dep .deb produced
+  # (m) Assert hello-dep .deb produced
   test -f /project/build-test/hello-dep_*.deb
   '
 

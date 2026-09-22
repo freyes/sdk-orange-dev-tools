@@ -2,11 +2,11 @@
 
 ## Overview
 
-Workshop SDK providing an Ubuntu packaging development environment with sbuild, mmdebstrap, dput-ng, mini-dinstall, and the git-ubuntu snap. Preconfigured to build packages locally, push them to a local repo at `/project/local-repo`, and build other packages against that repo. Supports all currently-supported Ubuntu releases dynamically via `distro-info --supported`.
+Workshop SDK providing an Ubuntu packaging development environment with sbuild, mmdebstrap, dput-ng, mini-dinstall, a squid caching proxy, and the git-ubuntu snap. Preconfigured to build packages locally, push them to a local repo at `/project/local-repo`, and build other packages against that repo. Deb downloads from apt, mmdebstrap, and sbuild chroots are routed through a local squid proxy via per-tool configuration (no global proxy env vars). Supports all currently-supported Ubuntu releases dynamically via `distro-info --supported`.
 
 ## What's Installed
 
-- **apt packages**: sbuild, debhelper, devscripts, ubuntu-dev-tools, dpkg-dev, build-essential, mmdebstrap, dput-ng, mini-dinstall, distro-info, schroot, debootstrap, uidmap
+- **apt packages**: sbuild, debhelper, devscripts, ubuntu-dev-tools, dpkg-dev, build-essential, mmdebstrap, dput-ng, mini-dinstall, distro-info, schroot, debootstrap, uidmap, squid
 - **snap**: git-ubuntu (best-effort, requires `vm: true`)
 
 ## Prerequisites
@@ -82,12 +82,14 @@ sbuild automatically sees packages in the local repo via `$extra_repositories` i
 | `~/.dput.d/profiles/local.json` | dput-ng upload config | `method = local`, `incoming = /project/local-repo/mini-dinstall/incoming` |
 | `~/.mini-dinstall.conf` | local repo config | `archive_style = flat`, `archivedir = /project/local-repo`, `generate_release = 1` |
 | `/etc/dput.d/profiles/local.json` | system-wide dput-ng config | Same local profile as ~/.dput.d/profiles/local.json |
+| `/etc/squid/squid.conf` | squid caching proxy | `http_port 3128`, `cache_dir ufs /var/spool/squid 5000 16 256` |
+| `/etc/apt/apt.conf.d/90proxy` | apt proxy config | `Acquire::http::Proxy` and `Acquire::https::Proxy` → `127.0.0.1:3128` |
 | `/etc/profile.d/orange-dev-tools.sh` | PATH | Adds `$SDK/bin` to PATH |
 
 ## How It Works
 
-- **setup-base hook** (runs as root): Installs all apt packages, git-ubuntu snap, writes system-wide config
-- **setup-project hook** (runs as workshop user): Writes per-user sbuild/dput-ng/mini-dinstall configs dynamically using `distro-info --supported`, creates local repo dirs
+- **setup-base hook** (runs as root): Installs all apt packages (including squid), git-ubuntu snap, writes system-wide config, starts squid, configures apt proxy
+- **setup-project hook** (runs as workshop user): Writes per-user sbuild/dput-ng/mini-dinstall configs dynamically using `distro-info --supported`, configures mmdebstrap/sbuild proxy via `--aptopt` and `--customize-hook`, creates local repo dirs
 - **check-health hook**: Verifies all tools and config files are present
 - **create-sbuild-chroots action**: Pre-builds sbuild chroot tarballs on demand
 

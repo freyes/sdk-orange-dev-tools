@@ -12,13 +12,25 @@ for tool in sbuild dpkg-buildpackage dput mini-dinstall mmdebstrap distro-info; 
     fi
 done
 
+# Check squid binary (in /usr/sbin, may not be in PATH for non-root)
+if [ ! -x /usr/sbin/squid ]; then
+    workshopctl set-health error "squid not found"
+    exit 0
+fi
+
+# Check squid is listening on port 3128
+if ! (echo > /dev/tcp/127.0.0.1/3128) 2>/dev/null; then
+    workshopctl set-health error "squid not listening on port 3128"
+    exit 0
+fi
+
 # Check git-ubuntu separately (optional — log warning if missing, do NOT fail)
 if ! git ubuntu --version >/dev/null 2>&1; then
     echo "WARN: git-ubuntu snap not available" >&2
 fi
 
 # Check config files exist
-for cfg in "$WORKSHOP_HOME/.sbuildrc" "$WORKSHOP_HOME/.dput.d/profiles/local.json" "$WORKSHOP_HOME/.mini-dinstall.conf" "/etc/dput.d/profiles/local.json"; do
+for cfg in "$WORKSHOP_HOME/.sbuildrc" "$WORKSHOP_HOME/.dput.d/profiles/local.json" "$WORKSHOP_HOME/.mini-dinstall.conf" "/etc/dput.d/profiles/local.json" "/etc/squid/squid.conf" "/etc/apt/apt.conf.d/90proxy"; do
     if [ ! -f "$cfg" ]; then
         workshopctl set-health error "$cfg missing"
         exit 0

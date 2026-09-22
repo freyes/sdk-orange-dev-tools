@@ -12,7 +12,7 @@ fi
 # Install the full Ubuntu packaging toolchain
 apt-get install -y sbuild debhelper devscripts ubuntu-dev-tools dpkg-dev \
     build-essential mmdebstrap dput-ng mini-dinstall distro-info schroot \
-    debootstrap uidmap software-properties-common
+    debootstrap uidmap software-properties-common squid
 
 # Ensure the sbuild group exists (sbuild package should create it, but be defensive)
 getent group sbuild >/dev/null || groupadd --system sbuild
@@ -30,6 +30,75 @@ command -v git-ubuntu >/dev/null 2>&1 || snap install git-ubuntu --classic 2>/de
 # System-wide PATH for SDK helper scripts
 cat <<EOF >/etc/profile.d/orange-dev-tools.sh
 export PATH="\$SDK/bin:\$PATH"
+EOF
+
+# Squid caching proxy configuration (adapted from freyes/squid.conf)
+cat <<'EOF' >/etc/squid/squid.conf
+acl localnet src 10.10.0.0/16
+acl localnet src 10.0.3.0/24
+acl localnet src 10.0.4.0/24
+acl localnet src 192.168.0.0/16
+acl localnet src 172.20.20.0/24
+acl SSL_ports port 443
+acl Safe_ports port 80
+acl Safe_ports port 21
+acl Safe_ports port 443
+acl Safe_ports port 70
+acl Safe_ports port 210
+acl Safe_ports port 1025-65535
+acl Safe_ports port 280
+acl Safe_ports port 488
+acl Safe_ports port 591
+acl Safe_ports port 777
+acl CONNECT method CONNECT
+http_access deny !Safe_ports
+http_access deny CONNECT !SSL_ports
+http_access allow localhost manager
+http_access deny manager
+http_access allow localnet
+http_access allow localhost
+http_access deny all
+http_port 3128
+maximum_object_size 12 GB
+cache_dir ufs /var/spool/squid 5000 16 256
+coredump_dir /var/spool/squid
+refresh_pattern ^ftp:           1440    20%     10080
+refresh_pattern ^gopher:        1440    0%      1440
+refresh_pattern -i (/cgi-bin/|\?) 0     0%     0
+refresh_pattern (Release|InRelease|Packages\.bz2|Packages(.gz)*)$      600       20%     2880
+refresh_pattern (\.deb|\.udeb)$   129600 100% 129600
+refresh_pattern -i \.(sjson|json)$ 0    20%     3600
+refresh_pattern -i (boot-kernel|di-kernel|boot-initrd|di-initrd|root-image\.gz) 604800 100% 2592000 override-expire ignore-no-cache ignore-no-store ignore-private
+refresh_pattern .               0       20%     4320
+cache_store_log /var/log/squid/store.log
+cache_log /var/log/squid/cache.log
+# url_rewrite_program /etc/squid/rewrite.pl
+EOF
+
+# Initialize squid cache directory (idempotent)
+mkdir -p /var/spool/squid
+chown proxy:proxy /var/spool/squid
+squid -z 2>/dev/null || true
+
+# Enable and start squid
+systemctl enable --now squid || service squid restart
+
+# Verify squid is listening before configuring apt to use it
+for _ in $(seq 1 10); do
+    if (echo > /dev/tcp/127.0.0.1/3128) 2>/dev/null; then
+        break
+    fi
+    sleep 1
+done
+if ! (echo > /dev/tcp/127.0.0.1/3128) 2>/dev/null; then
+    echo "ERROR: squid is not listening on port 3128 — cannot configure apt proxy" >&2
+    exit 1
+fi
+
+# Configure apt to use the squid proxy
+cat <<EOF >/etc/apt/apt.conf.d/90proxy
+Acquire::http::Proxy "http://127.0.0.1:3128";
+Acquire::https::Proxy "http://127.0.0.1:3128";
 EOF
 
 # System-wide dput-ng configuration for local repository uploads

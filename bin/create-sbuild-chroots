@@ -79,6 +79,9 @@ for series in "${series_list[@]}"; do
         --variant=buildd \
         --components=main,universe,multiverse \
         --include=apt,adduser,ca-certificates \
+        --aptopt='Acquire::http::Proxy "http://127.0.0.1:3128";' \
+        --aptopt='Acquire::https::Proxy "http://127.0.0.1:3128";' \
+        --customize-hook="install -m 0644 /etc/apt/apt.conf.d/90proxy \"\$1/etc/apt/apt.conf.d/90proxy\"" \
         "${series}" \
         "${tarball}" \
         http://archive.ubuntu.com/ubuntu
