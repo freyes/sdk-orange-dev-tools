@@ -14,6 +14,9 @@ apt-get install -y sbuild debhelper devscripts ubuntu-dev-tools dpkg-dev \
     build-essential mmdebstrap dput-ng mini-dinstall distro-info schroot \
     debootstrap uidmap software-properties-common
 
+# Ensure the sbuild group exists (sbuild package should create it, but be defensive)
+getent group sbuild >/dev/null || groupadd --system sbuild
+
 # Add workshop user to the sbuild group (idempotent)
 WORKSHOP_USER=$(getent passwd 1000 | cut -d: -f1)
 if [ -n "$WORKSHOP_USER" ] && ! id -nG "$WORKSHOP_USER" | grep -qw sbuild; then
