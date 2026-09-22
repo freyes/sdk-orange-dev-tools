@@ -18,7 +18,7 @@ if ! git ubuntu --version >/dev/null 2>&1; then
 fi
 
 # Check config files exist
-for cfg in "$WORKSHOP_HOME/.sbuildrc" "$WORKSHOP_HOME/.dput.cf" "$WORKSHOP_HOME/.mini-dinstall.conf" "/etc/dput.cf"; do
+for cfg in "$WORKSHOP_HOME/.sbuildrc" "$WORKSHOP_HOME/.dput.d/profiles/local.json" "$WORKSHOP_HOME/.mini-dinstall.conf" "/etc/dput.d/profiles/local.json"; do
     if [ ! -f "$cfg" ]; then
         workshopctl set-health error "$cfg missing"
         exit 0

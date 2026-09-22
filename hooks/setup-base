@@ -11,7 +11,7 @@ fi
 
 # Install the full Ubuntu packaging toolchain
 apt-get install -y sbuild debhelper devscripts ubuntu-dev-tools dpkg-dev \
-    build-essential mmdebstrap dput mini-dinstall distro-info schroot \
+    build-essential mmdebstrap dput-ng mini-dinstall distro-info schroot \
     debootstrap uidmap software-properties-common
 
 # Add workshop user to the sbuild group (idempotent)
@@ -29,12 +29,14 @@ cat <<EOF >/etc/profile.d/orange-dev-tools.sh
 export PATH="\$SDK/bin:\$PATH"
 EOF
 
-# System-wide dput configuration for local repository uploads
-cat <<'EOF' >/etc/dput.cf
-[local]
-fqdn = localhost
-method = local
-incoming = /project/local-repo/mini-dinstall/incoming
-allow_unsigned_uploads = 1
-post_upload_command = mini-dinstall --batch
+# System-wide dput-ng configuration for local repository uploads
+mkdir -p /etc/dput.d/profiles
+cat <<'EOF' >/etc/dput.d/profiles/local.json
+{
+    "fqdn": "localhost",
+    "method": "local",
+    "incoming": "/project/local-repo/mini-dinstall/incoming",
+    "allow_unsigned_uploads": true,
+    "post_upload_command": "mini-dinstall --batch"
+}
 EOF

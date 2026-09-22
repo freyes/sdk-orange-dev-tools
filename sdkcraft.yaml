@@ -2,7 +2,7 @@ name: orange-dev-tools
 version: "0.1"
 summary: Ubuntu packaging development environment
 description: |
-  Workshop SDK providing sbuild, mmdebstrap, dput, mini-dinstall, and git-ubuntu
+  Workshop SDK providing sbuild, mmdebstrap, dput-ng, mini-dinstall, and git-ubuntu
   for local Ubuntu package building. Supports dynamic suite discovery via
   distro-info and includes a create-sbuild-chroots action for pre-building
   sbuild chroot tarballs on demand.

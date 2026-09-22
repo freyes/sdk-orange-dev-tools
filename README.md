@@ -2,11 +2,11 @@
 
 ## Overview
 
-Workshop SDK providing an Ubuntu packaging development environment with sbuild, mmdebstrap, dput, mini-dinstall, and the git-ubuntu snap. Preconfigured to build packages locally, push them to a local repo at `/project/local-repo`, and build other packages against that repo. Supports all currently-supported Ubuntu releases dynamically via `distro-info --supported`.
+Workshop SDK providing an Ubuntu packaging development environment with sbuild, mmdebstrap, dput-ng, mini-dinstall, and the git-ubuntu snap. Preconfigured to build packages locally, push them to a local repo at `/project/local-repo`, and build other packages against that repo. Supports all currently-supported Ubuntu releases dynamically via `distro-info --supported`.
 
 ## What's Installed
 
-- **apt packages**: sbuild, debhelper, devscripts, ubuntu-dev-tools, dpkg-dev, build-essential, mmdebstrap, dput, mini-dinstall, distro-info, schroot, debootstrap, uidmap
+- **apt packages**: sbuild, debhelper, devscripts, ubuntu-dev-tools, dpkg-dev, build-essential, mmdebstrap, dput-ng, mini-dinstall, distro-info, schroot, debootstrap, uidmap
 - **snap**: git-ubuntu (best-effort, requires `vm: true`)
 
 ## Prerequisites
@@ -79,15 +79,15 @@ sbuild automatically sees packages in the local repo via `$extra_repositories` i
 | File | Purpose | Key Settings |
 |------|---------|-------------|
 | `~/.sbuildrc` | sbuild configuration | `$chroot_mode = 'unshare'`, `$extra_repositories` (local repo), `$unshare_bind_mounts`, `$unshare_mmdebstrap_extra_args` (Resolute+) |
-| `~/.dput.cf` | dput upload config | `method = local`, `incoming = /project/local-repo/mini-dinstall/incoming` |
+| `~/.dput.d/profiles/local.json` | dput-ng upload config | `method = local`, `incoming = /project/local-repo/mini-dinstall/incoming` |
 | `~/.mini-dinstall.conf` | local repo config | `archive_style = flat`, `archivedir = /project/local-repo`, `generate_release = 1` |
-| `/etc/dput.cf` | system-wide dput config | Same local stanza as ~/.dput.cf |
+| `/etc/dput.d/profiles/local.json` | system-wide dput-ng config | Same local profile as ~/.dput.d/profiles/local.json |
 | `/etc/profile.d/orange-dev-tools.sh` | PATH | Adds `$SDK/bin` to PATH |
 
 ## How It Works
 
 - **setup-base hook** (runs as root): Installs all apt packages, git-ubuntu snap, writes system-wide config
-- **setup-project hook** (runs as workshop user): Writes per-user sbuild/dput/mini-dinstall configs dynamically using `distro-info --supported`, creates local repo dirs
+- **setup-project hook** (runs as workshop user): Writes per-user sbuild/dput-ng/mini-dinstall configs dynamically using `distro-info --supported`, creates local repo dirs
 - **check-health hook**: Verifies all tools and config files are present
 - **create-sbuild-chroots action**: Pre-builds sbuild chroot tarballs on demand
 

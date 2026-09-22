@@ -30,14 +30,16 @@ SBUILDRCEOF
     echo "];" >> ~/.sbuildrc
 fi
 
-# --- (b) Write ~/.dput.cf ---
-cat > ~/.dput.cf <<DPUTEOF
-[local]
-fqdn = localhost
-method = local
-incoming = /project/local-repo/mini-dinstall/incoming
-allow_unsigned_uploads = 1
-post_upload_command = mini-dinstall --batch
+# --- (b) Write ~/.dput.d/profiles/local.json (dput-ng) ---
+mkdir -p ~/.dput.d/profiles
+cat > ~/.dput.d/profiles/local.json <<DPUTEOF
+{
+    "fqdn": "localhost",
+    "method": "local",
+    "incoming": "/project/local-repo/mini-dinstall/incoming",
+    "allow_unsigned_uploads": true,
+    "post_upload_command": "mini-dinstall --batch"
+}
 DPUTEOF
 
 # --- (c) Write ~/.mini-dinstall.conf ---

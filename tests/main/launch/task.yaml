@@ -25,7 +25,7 @@ execute: |
   
   # (c) Verify configs
   test -f ~/.sbuildrc
-  test -f ~/.dput.cf
+  test -f ~/.dput.d/profiles/local.json
   test -f ~/.mini-dinstall.conf
   
   # (d) Structural suite check
