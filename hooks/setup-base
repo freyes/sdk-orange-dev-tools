@@ -12,7 +12,7 @@ fi
 # Install the full Ubuntu packaging toolchain
 apt-get install -y sbuild debhelper devscripts ubuntu-dev-tools dpkg-dev \
     build-essential mmdebstrap dput-ng mini-dinstall distro-info schroot \
-    debootstrap uidmap software-properties-common squid
+    debootstrap uidmap software-properties-common squid byobu
 
 # Ensure the sbuild group exists (sbuild package should create it, but be defensive)
 getent group sbuild >/dev/null || groupadd --system sbuild
