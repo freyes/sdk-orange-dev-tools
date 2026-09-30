@@ -18,10 +18,18 @@ jobs:
       - name: Install sdkcraft
         run: sudo snap install sdkcraft --classic
 
+      - uses: canonical/setup-lxd@main
+        with:
+          group: lxd
+
+      - name: Add user to lxd group
+        run: |
+          sudo usermod -aG lxd $USER
+
       - name: Pack SDK
         run: |
           mkdir -p dist
-          sdkcraft pack -v -o dist
+          sg lxd -c "sdkcraft pack -v -o dist"
 
       - name: Upload and release to latest/edge
         env:
