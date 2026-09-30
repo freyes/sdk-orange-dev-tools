@@ -18,17 +18,14 @@ jobs:
       - name: Install sdkcraft
         run: sudo snap install sdkcraft --classic
 
-      - name: Log in to the SDK Store
-        env:
-          SDKCRAFT_STORE_CREDENTIALS: ${{ secrets.SDKCRAFT_STORE_CREDENTIALS }}
-        run: sdkcraft login
-
       - name: Pack SDK
         run: |
           mkdir -p dist
           sdkcraft pack -v -o dist
 
       - name: Upload and release to latest/edge
+        env:
+          SDKCRAFT_STORE_CREDENTIALS: ${{ secrets.SDKCRAFT_STORE_CREDENTIALS }}
         run: |
           shopt -s nullglob
           for sdk in dist/*.sdk; do
