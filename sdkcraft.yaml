@@ -18,3 +18,8 @@ parts:
     override-build: |
       mkdir -p "$CRAFT_PART_INSTALL/bin"
       install -m 0755 "$CRAFT_PROJECT_DIR/bin/create-sbuild-chroots" "$CRAFT_PART_INSTALL/bin/create-sbuild-chroots"
+
+plugs:
+  sbuild-cache:
+    interface: mount
+    workshop-target: /home/workshop/.cache/sbuild
