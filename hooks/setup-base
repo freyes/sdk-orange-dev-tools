@@ -29,7 +29,7 @@ command -v git-ubuntu >/dev/null 2>&1 || snap install git-ubuntu --classic 2>/de
 
 # System-wide PATH for SDK helper scripts
 cat <<EOF >/etc/profile.d/orange-dev-tools.sh
-export PATH="\$SDK/bin:\$PATH"
+export PATH="$SDK/bin:\$PATH"
 EOF
 
 # Squid caching proxy configuration (adapted from freyes/squid.conf)
