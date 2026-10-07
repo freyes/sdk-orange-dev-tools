@@ -12,7 +12,7 @@ fi
 # Install the full Ubuntu packaging toolchain
 apt-get install -y sbuild debhelper devscripts ubuntu-dev-tools dpkg-dev \
     build-essential mmdebstrap dput-ng mini-dinstall distro-info schroot \
-    debootstrap uidmap software-properties-common squid byobu
+    debootstrap uidmap software-properties-common squid byobu fakeroot apt-utils
 
 # Ensure the sbuild group exists (sbuild package should create it, but be defensive)
 getent group sbuild >/dev/null || groupadd --system sbuild
@@ -118,6 +118,6 @@ cat <<'EOF' >/etc/dput.d/profiles/local.json
     "method": "local",
     "incoming": "/project/local-repo/mini-dinstall/incoming",
     "allow_unsigned_uploads": true,
-    "post_upload_command": "mini-dinstall --batch"
+    "post_upload_command": "sh -c 'mini-dinstall --batch && generate-local-repo-index'"
 }
 EOF
