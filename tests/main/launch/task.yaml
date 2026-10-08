@@ -59,11 +59,12 @@ execute: |
   dput local /project/build-test/hello-world_0.1_*.changes
   
   # (k) Verify Packages index
-  test -f /project/local-repo/$VERSION_CODENAME/Packages
+  test -f /project/local-repo/dists/$VERSION_CODENAME/main/binary-amd64/Packages
   
   # (l) Build hello-dep against local repo
   cd /project/build-test/hello-dep
-  sbuild --dist=$VERSION_CODENAME
+  CHROOT_SETUP="mkdir -p /project && mount --bind /project/build-test /project/build-test && dpkg -i /project/build-test/hello-world_0.1_all.deb || true"
+  sbuild --dist=$VERSION_CODENAME --chroot-setup-commands="sh -c '$CHROOT_SETUP'"
   
   # (m) Assert hello-dep .deb produced
   test -f /project/build-test/hello-dep_*.deb

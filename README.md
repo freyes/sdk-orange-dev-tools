@@ -64,7 +64,7 @@ sbuild --dist=$(. /etc/os-release && echo $VERSION_CODENAME)
 dput local ../package_*.changes
 ```
 
-This pushes to `/project/local-repo/` via mini-dinstall. The `post_upload_command` triggers `mini-dinstall --batch` automatically.
+This uploads to `/project/local-repo/` via mini-dinstall, which stores `.deb` files flat. The `post_upload_command` runs `mini-dinstall --batch` and regenerates a standard `dists/<series>/main/binary-amd64/` apt tree with `apt-ftparchive`.
 
 ### Build against local repo
 
@@ -72,15 +72,15 @@ This pushes to `/project/local-repo/` via mini-dinstall. The `post_upload_comman
 sbuild --dist=$(. /etc/os-release && echo $VERSION_CODENAME)
 ```
 
-sbuild automatically sees packages in the local repo via `$extra_repositories` in `~/.sbuildrc`.
+sbuild automatically sees packages through the standard `dists/<series>/main/binary-amd64/` apt tree configured by `$extra_repositories` in `~/.sbuildrc`.
 
 ## Configuration Reference
 
 | File | Purpose | Key Settings |
 |------|---------|-------------|
-| `~/.sbuildrc` | sbuild configuration | `$chroot_mode = 'unshare'`, `$extra_repositories` (local repo), `$unshare_bind_mounts`, `$unshare_mmdebstrap_extra_args` (Resolute+) |
-| `~/.dput.d/profiles/local.json` | dput-ng upload config | `method = local`, `incoming = /project/local-repo/mini-dinstall/incoming` |
-| `~/.mini-dinstall.conf` | local repo config | `archive_style = flat`, `archivedir = /project/local-repo`, `generate_release = 1` |
+| `~/.sbuildrc` | sbuild configuration | `$chroot_mode = 'unshare'`, `$extra_repositories = ['deb [trusted=yes] file:///project/local-repo <series> main']`, `$unshare_bind_mounts`, `$unshare_mmdebstrap_extra_args` (Resolute+) |
+| `~/.dput.d/profiles/local.json` | dput-ng upload config | `method = local`, `incoming = /project/local-repo/mini-dinstall/incoming`; uploads trigger regeneration of the `dists/<series>/main/binary-amd64/` apt tree via `apt-ftparchive` |
+| `~/.mini-dinstall.conf` | local repo config | `archive_style = flat` stores `.deb` files flat, `archivedir = /project/local-repo`; `apt-ftparchive` regenerates `dists/<series>/main/binary-amd64/` |
 | `/etc/dput.d/profiles/local.json` | system-wide dput-ng config | Same local profile as ~/.dput.d/profiles/local.json |
 | `/etc/squid/squid.conf` | squid caching proxy | `http_port 3128`, `cache_dir ufs /var/spool/squid 5000 16 256` |
 | `/etc/apt/apt.conf.d/90proxy` | apt proxy config | `Acquire::http::Proxy` and `Acquire::https::Proxy` → `127.0.0.1:3128` |
@@ -89,7 +89,7 @@ sbuild automatically sees packages in the local repo via `$extra_repositories` i
 ## How It Works
 
 - **setup-base hook** (runs as root): Installs all apt packages (including squid), git-ubuntu snap, writes system-wide config, starts squid, configures apt proxy
-- **setup-project hook** (runs as workshop user): Writes per-user sbuild/dput-ng/mini-dinstall configs dynamically using `distro-info --supported`, configures mmdebstrap/sbuild proxy via `--aptopt` and `--customize-hook`, creates local repo dirs
+- **setup-project hook** (runs as workshop user): Writes per-user sbuild/dput-ng/mini-dinstall configs dynamically using `distro-info --supported`, configures uploads to regenerate a `dists/<series>/main/binary-amd64/` apt tree via `apt-ftparchive` while mini-dinstall stores `.deb` files flat, configures mmdebstrap/sbuild proxy via `--aptopt` and `--customize-hook`, creates local repo dirs
 - **check-health hook**: Verifies all tools and config files are present
 - **create-sbuild-chroots action**: Pre-builds sbuild chroot tarballs on demand
 

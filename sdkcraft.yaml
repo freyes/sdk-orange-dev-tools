@@ -18,6 +18,7 @@ parts:
     override-build: |
       mkdir -p "$CRAFT_PART_INSTALL/bin"
       install -m 0755 "$CRAFT_PROJECT_DIR/bin/create-sbuild-chroots" "$CRAFT_PART_INSTALL/bin/create-sbuild-chroots"
+      install -m 0755 "$CRAFT_PROJECT_DIR/bin/generate-local-repo-index" "$CRAFT_PART_INSTALL/bin/generate-local-repo-index"
 
 plugs:
   sbuild-cache:
