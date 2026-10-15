@@ -12,7 +12,7 @@ fi
 # Install the full Ubuntu packaging toolchain
 apt-get install -y sbuild debhelper devscripts ubuntu-dev-tools dpkg-dev \
     build-essential mmdebstrap dput-ng mini-dinstall distro-info schroot \
-    debootstrap uidmap software-properties-common squid byobu
+    debootstrap uidmap software-properties-common squid byobu fakeroot apt-utils
 
 # Ensure the sbuild group exists (sbuild package should create it, but be defensive)
 getent group sbuild >/dev/null || groupadd --system sbuild
@@ -32,13 +32,21 @@ cat <<EOF >/etc/profile.d/orange-dev-tools.sh
 export PATH="$SDK/bin:\$PATH"
 EOF
 
-# Squid caching proxy configuration (adapted from freyes/squid.conf)
-cat <<'EOF' >/etc/squid/squid.conf
-acl localnet src 10.10.0.0/16
-acl localnet src 10.0.3.0/24
-acl localnet src 10.0.4.0/24
-acl localnet src 192.168.0.0/16
-acl localnet src 172.20.20.0/24
+# Squid caching proxy configuration
+# Dynamically detect local subnets for ACL (exclude loopback)
+LOCAL_SUBNETS=$(ip -4 -o addr show | awk '{print $4}' | grep -v '^127\.' | sort -u)
+
+if [ -z "$LOCAL_SUBNETS" ]; then
+    echo "WARN: No non-loopback IPv4 addresses detected, falling back to RFC 1918 private ranges" >&2
+    LOCAL_SUBNETS="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
+fi
+
+# Generate squid.conf with dynamically detected subnet ACLs
+{
+    for subnet in $LOCAL_SUBNETS; do
+        echo "acl localnet src $subnet"
+    done
+    cat <<'EOF'
 acl SSL_ports port 443
 acl Safe_ports port 80
 acl Safe_ports port 21
@@ -74,6 +82,7 @@ cache_store_log /var/log/squid/store.log
 cache_log /var/log/squid/cache.log
 # url_rewrite_program /etc/squid/rewrite.pl
 EOF
+} >/etc/squid/squid.conf
 
 # Initialize squid cache directory (idempotent)
 mkdir -p /var/spool/squid
@@ -109,6 +118,6 @@ cat <<'EOF' >/etc/dput.d/profiles/local.json
     "method": "local",
     "incoming": "/project/local-repo/mini-dinstall/incoming",
     "allow_unsigned_uploads": true,
-    "post_upload_command": "mini-dinstall --batch"
+    "post_upload_command": "sh -c 'mini-dinstall --batch && generate-local-repo-index'"
 }
 EOF

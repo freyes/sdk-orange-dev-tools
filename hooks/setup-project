@@ -9,7 +9,7 @@ SBUILD_VER=$(dpkg-query -W -f='${Version}' sbuild 2>/dev/null || echo "0")
 cat > ~/.sbuildrc <<SBUILDRCEOF
 \$chroot_mode = 'unshare';
 \$extra_repositories = [
-    'deb [trusted=yes] file:///project/local-repo $VERSION_CODENAME/',
+    'deb [trusted=yes] file:///project/local-repo $VERSION_CODENAME main',
 ];
 \$unshare_bind_mounts = [
     { directory => '/project/local-repo', mountpoint => '/project/local-repo' },
@@ -30,6 +30,17 @@ SBUILDRCEOF
     echo "];" >> ~/.sbuildrc
 fi
 
+# Inject the local repository into the chroot's apt sources at build time,
+# so sbuild's build-dependency resolver can find locally-built packages
+# regardless of chroot mode (schroot, mmdebstrap-unshare, etc.).
+cat >> ~/.sbuildrc <<SBUILDRCEOF
+\$external_commands = {
+    "chroot-setup-commands" => [
+        ['sh', '-c', 'echo "deb [trusted=yes] file:///project/local-repo $VERSION_CODENAME main" > /etc/apt/sources.list.d/sbuild-local-repo.list'],
+    ],
+};
+SBUILDRCEOF
+
 # --- (b) Write ~/.dput.d/profiles/local.json (dput-ng) ---
 mkdir -p ~/.dput.d/profiles
 cat > ~/.dput.d/profiles/local.json <<DPUTEOF
@@ -38,7 +49,7 @@ cat > ~/.dput.d/profiles/local.json <<DPUTEOF
     "method": "local",
     "incoming": "/project/local-repo/mini-dinstall/incoming",
     "allow_unsigned_uploads": true,
-    "post_upload_command": "mini-dinstall --batch"
+    "post_upload_command": "sh -c 'mini-dinstall --batch && generate-local-repo-index'"
 }
 DPUTEOF
 

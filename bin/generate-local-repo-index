@@ -1,0 +1,57 @@
+#!/bin/bash
+set -euo pipefail
+shopt -s nullglob
+
+# Generate a proper apt dists/ tree over the flat mini-dinstall repo so that
+# apt (and therefore sbuild's build-dependency resolver) can consume
+# locally-built packages. mini-dinstall keeps storing debs flat under
+# <series>/; this script only ADDS the dists/ metadata tree.
+
+REPO_ROOT="${1:-/project/local-repo}"
+
+if [[ ! -d "$REPO_ROOT" ]]; then
+    echo "Error: repo root '$REPO_ROOT' does not exist or is not a directory" >&2
+    exit 1
+fi
+
+if ! command -v apt-ftparchive >/dev/null 2>&1; then
+    echo "Error: apt-ftparchive not found; install the apt-utils package" >&2
+    exit 1
+fi
+
+conf="$(mktemp)"
+trap 'rm -f "$conf"' EXIT
+
+# Run from the repo root and pass the series directory as a relative path so
+# that Filename: entries in the generated Packages file are repo-root-relative
+# (e.g. "noble/hello-world_0.1_all.deb"), which is what apt needs to fetch
+# them from file://$REPO_ROOT.
+cd "$REPO_ROOT"
+
+for entry in */; do
+    series="${entry%/}"
+
+    case "$series" in
+        dists|mini-dinstall|pool|.*)
+            continue
+            ;;
+    esac
+
+    echo "Indexing series: $series" >&2
+
+    bindir="dists/$series/main/binary-amd64"
+    mkdir -p "$bindir"
+
+    apt-ftparchive packages "$series" > "$bindir/Packages"
+    gzip -9c "$bindir/Packages" > "$bindir/Packages.gz"
+
+    cat > "$conf" <<EOF
+APT::FTPArchive::Release::Codename "$series";
+APT::FTPArchive::Release::Suite "$series";
+APT::FTPArchive::Release::Architectures "amd64";
+APT::FTPArchive::Release::Components "main";
+APT::FTPArchive::Release::Label "Local orange-dev-tools packages";
+EOF
+
+    apt-ftparchive release -c "$conf" "dists/$series" > "dists/$series/Release"
+done
