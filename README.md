@@ -6,7 +6,7 @@ Workshop SDK providing an Ubuntu packaging development environment with sbuild, 
 
 ## What's Installed
 
-- **apt packages**: sbuild, debhelper, devscripts, ubuntu-dev-tools, dpkg-dev, build-essential, mmdebstrap, dput-ng, mini-dinstall, distro-info, schroot, debootstrap, uidmap, squid, byobu
+- **apt packages**: sbuild, debhelper, devscripts, ubuntu-dev-tools, dpkg-dev, build-essential, mmdebstrap, dput-ng, mini-dinstall, distro-info, schroot, debootstrap, uidmap, squid, byobu, dh-python
 - **snap**: git-ubuntu (best-effort, requires `vm: true`)
 
 ## Prerequisites
