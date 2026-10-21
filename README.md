@@ -83,6 +83,7 @@ sbuild automatically sees packages through the standard `dists/<series>/main/bin
 | `~/.mini-dinstall.conf` | local repo config | `archive_style = flat` stores `.deb` files flat, `archivedir = /project/local-repo`; `apt-ftparchive` regenerates `dists/<series>/main/binary-amd64/` |
 | `/etc/dput.d/profiles/local.json` | system-wide dput-ng config | Same local profile as ~/.dput.d/profiles/local.json |
 | `/etc/squid/squid.conf` | squid caching proxy | `http_port 3128`, `cache_dir ufs /var/spool/squid 5000 16 256` |
+| `/etc/apt/apt.conf.d/80-retries` | apt retry config | `Acquire::Retries "5"` |
 | `/etc/apt/apt.conf.d/90proxy` | apt proxy config | `Acquire::http::Proxy` and `Acquire::https::Proxy` → `127.0.0.1:3128` |
 | `/etc/profile.d/orange-dev-tools.sh` | PATH | Adds `$SDK/bin` to PATH |
 

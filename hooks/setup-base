@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Retry transient apt download failures
+echo 'Acquire::Retries "5";' >/etc/apt/apt.conf.d/80-retries
+
 # Ensure universe component is enabled (needed for mini-dinstall)
 apt-get update
 if ! apt-cache policy mini-dinstall 2>/dev/null | grep -q 'Candidate:' | grep -qv '(none)'; then
