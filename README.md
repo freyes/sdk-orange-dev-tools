@@ -2,16 +2,16 @@
 
 ## Overview
 
-Workshop SDK providing an Ubuntu packaging development environment with sbuild, mmdebstrap, dput-ng, mini-dinstall, a squid caching proxy, and the git-ubuntu snap. Preconfigured to build packages locally, push them to a local repo at `/project/local-repo`, and build other packages against that repo. Deb downloads from apt, mmdebstrap, and sbuild chroots are routed through a local squid proxy via per-tool configuration (no global proxy env vars). Supports all currently-supported Ubuntu releases dynamically via `distro-info --supported`.
+Workshop SDK providing an Ubuntu packaging development environment with sbuild, mmdebstrap, dput-ng, mini-dinstall, a squid caching proxy, and the git-ubuntu and startriage snaps. Preconfigured to build packages locally, push them to a local repo at `/project/local-repo`, and build other packages against that repo. Deb downloads from apt, mmdebstrap, and sbuild chroots are routed through a local squid proxy via per-tool configuration (no global proxy env vars). Supports all currently-supported Ubuntu releases dynamically via `distro-info --supported`.
 
 ## What's Installed
 
 - **apt packages**: sbuild, debhelper, devscripts, ubuntu-dev-tools, dpkg-dev, build-essential, mmdebstrap, dput-ng, mini-dinstall, distro-info, schroot, debootstrap, uidmap, squid, byobu, dh-python
-- **snap**: git-ubuntu (best-effort, requires `vm: true`)
+- **snaps**: git-ubuntu (classic), startriage (`latest/edge`) (best-effort, requires `vm: true`)
 
 ## Prerequisites
 
-- Workshop environment with `vm: true` (needed for snapd to install git-ubuntu)
+- Workshop environment with `vm: true` (needed for snapd to install the git-ubuntu and startriage snaps)
 - No other setup required, the SDK handles everything
 
 ## Usage Guide
@@ -21,6 +21,17 @@ Workshop SDK providing an Ubuntu packaging development environment with sbuild, 
 ```bash
 git ubuntu clone <package>
 git ubuntu export-orig
+```
+
+### Triage Ubuntu bugs
+
+[startriage](https://github.com/ubuntu/startriage) is a unified triage tool for
+Ubuntu bugs, documentation, and forum posts. It is configured via
+`~/.config/startriage.toml`.
+
+```bash
+startriage triage   # daily triage
+startriage todo     # bug housekeeping
 ```
 
 ### Create sbuild chroots
@@ -89,7 +100,7 @@ sbuild automatically sees packages through the standard `dists/<series>/main/bin
 
 ## How It Works
 
-- **setup-base hook** (runs as root): Installs all apt packages (including squid), git-ubuntu snap, writes system-wide config, starts squid, configures apt proxy
+- **setup-base hook** (runs as root): Installs all apt packages (including squid), git-ubuntu and startriage snaps, writes system-wide config, starts squid, configures apt proxy
 - **setup-project hook** (runs as workshop user): Writes per-user sbuild/dput-ng/mini-dinstall configs dynamically using `distro-info --supported`, configures uploads to regenerate a `dists/<series>/main/binary-amd64/` apt tree via `apt-ftparchive` while mini-dinstall stores `.deb` files flat, configures mmdebstrap/sbuild proxy via `--aptopt` and `--customize-hook`, creates local repo dirs
 - **check-health hook**: Verifies all tools and config files are present
 - **create-sbuild-chroots action**: Pre-builds sbuild chroot tarballs on demand
@@ -99,6 +110,10 @@ sbuild automatically sees packages through the standard `dists/<series>/main/bin
 ### git-ubuntu not found
 
 The workshop needs `vm: true` for snapd to run. Check your workshop definition includes `vm: true` or uses a VM-based backend.
+
+### startriage not found
+
+startriage is only published on the `latest/edge` snap channel and needs snapd, like git-ubuntu. Install it manually with `sudo snap install startriage --edge`.
 
 ### sbuild chroot creation fails
 

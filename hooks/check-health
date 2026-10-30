@@ -29,6 +29,11 @@ if ! git ubuntu --version >/dev/null 2>&1; then
     echo "WARN: git-ubuntu snap not available" >&2
 fi
 
+# Check startriage separately (optional — log warning if missing, do NOT fail)
+if ! command -v startriage >/dev/null 2>&1; then
+    echo "WARN: startriage snap not available" >&2
+fi
+
 # Check config files exist
 for cfg in "$WORKSHOP_HOME/.sbuildrc" "$WORKSHOP_HOME/.dput.d/profiles/local.json" "$WORKSHOP_HOME/.mini-dinstall.conf" "/etc/dput.d/profiles/local.json" "/etc/squid/squid.conf" "/etc/apt/apt.conf.d/90proxy"; do
     if [ ! -f "$cfg" ]; then
