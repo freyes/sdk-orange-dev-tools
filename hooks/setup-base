@@ -31,6 +31,11 @@ fi
 command -v git-ubuntu >/dev/null 2>&1 || snap install git-ubuntu --classic 2>/dev/null || \
     echo "WARN: git-ubuntu snap install failed — snapd may not be available"
 
+# Install startriage snap (best-effort — only published on the edge channel;
+# do NOT fail the hook if snap install fails)
+command -v startriage >/dev/null 2>&1 || snap install startriage --edge 2>/dev/null || \
+    echo "WARN: startriage snap install failed — snapd may not be available"
+
 # System-wide PATH for SDK helper scripts
 cat <<EOF >/etc/profile.d/orange-dev-tools.sh
 export PATH="$SDK/bin:\$PATH"
