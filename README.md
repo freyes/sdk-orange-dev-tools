@@ -90,7 +90,7 @@ sbuild automatically sees packages through the standard `dists/<series>/main/bin
 ## How It Works
 
 - **setup-base hook** (runs as root): Installs all apt packages (including squid), git-ubuntu snap, writes system-wide config, starts squid, configures apt proxy
-- **setup-project hook** (runs as workshop user): Writes per-user sbuild/dput-ng/mini-dinstall configs dynamically using `distro-info --supported`, configures uploads to regenerate a `dists/<series>/main/binary-amd64/` apt tree via `apt-ftparchive` while mini-dinstall stores `.deb` files flat, configures mmdebstrap/sbuild proxy via `--aptopt` and `--customize-hook`, creates local repo dirs
+- **setup-project hook** (runs as workshop user): Writes per-user sbuild/dput-ng/mini-dinstall configs dynamically using `distro-info --supported`, configures uploads to regenerate a `dists/<series>/main/binary-amd64/` apt tree via `apt-ftparchive` while mini-dinstall stores `.deb` files flat, configures mmdebstrap/sbuild proxy via `--aptopt` and `--customize-hook`, creates local repo dirs and initializes an empty-but-valid apt tree for every supported series so sbuild chroots work before the first `dput` upload
 - **check-health hook**: Verifies all tools and config files are present
 - **create-sbuild-chroots action**: Pre-builds sbuild chroot tarballs on demand
 
@@ -106,7 +106,7 @@ Ensure mmdebstrap is installed and network access to `archive.ubuntu.com` is ava
 
 ### Local repo is empty
 
-The local repo starts empty. Build a package first, then `dput local` to populate it.
+The local repo starts with no packages, but its apt metadata (`dists/<series>/`) is initialized at setup, so sbuild works before the first upload. Build a package, then `dput local` to populate it.
 
 ### distro-info doesn't list expected suite
 

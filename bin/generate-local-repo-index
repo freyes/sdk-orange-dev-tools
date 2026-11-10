@@ -28,6 +28,20 @@ trap 'rm -f "$conf"' EXIT
 # them from file://$REPO_ROOT.
 cd "$REPO_ROOT"
 
+write_release() {
+    local series="$1"
+
+    cat > "$conf" <<EOF
+APT::FTPArchive::Release::Codename "$series";
+APT::FTPArchive::Release::Suite "$series";
+APT::FTPArchive::Release::Architectures "amd64";
+APT::FTPArchive::Release::Components "main";
+APT::FTPArchive::Release::Label "Local orange-dev-tools packages";
+EOF
+
+    apt-ftparchive release -c "$conf" "dists/$series" > "dists/$series/Release"
+}
+
 for entry in */; do
     series="${entry%/}"
 
@@ -45,13 +59,27 @@ for entry in */; do
     apt-ftparchive packages "$series" > "$bindir/Packages"
     gzip -9c "$bindir/Packages" > "$bindir/Packages.gz"
 
-    cat > "$conf" <<EOF
-APT::FTPArchive::Release::Codename "$series";
-APT::FTPArchive::Release::Suite "$series";
-APT::FTPArchive::Release::Architectures "amd64";
-APT::FTPArchive::Release::Components "main";
-APT::FTPArchive::Release::Label "Local orange-dev-tools packages";
-EOF
-
-    apt-ftparchive release -c "$conf" "dists/$series" > "dists/$series/Release"
+    write_release "$series"
 done
+
+# Ensure every supported series has at least an empty (but valid) dists tree.
+# ~/.sbuildrc injects this repo into every sbuild chroot, so apt-get update in
+# the chroot must succeed even before the first dput upload (issue #4).
+if command -v distro-info >/dev/null 2>&1; then
+    distro-info --supported | while read -r series; do
+        bindir="dists/$series/main/binary-amd64"
+
+        if [[ -f "$bindir/Packages" && -f "dists/$series/Release" ]]; then
+            continue
+        fi
+
+        echo "Initializing empty apt repo for series: $series" >&2
+
+        mkdir -p "$bindir"
+        if [[ ! -f "$bindir/Packages" ]]; then
+            : > "$bindir/Packages"
+            gzip -9c "$bindir/Packages" > "$bindir/Packages.gz"
+        fi
+        write_release "$series"
+    done
+fi
