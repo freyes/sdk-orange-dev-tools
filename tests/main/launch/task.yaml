@@ -30,7 +30,7 @@ execute: |
   test -f ~/.mini-dinstall.conf
   test -f /etc/squid/squid.conf
   test -f /etc/apt/apt.conf.d/90proxy
-  grep -Fq 'Acquire::Retries "5";' /etc/apt/apt.conf.d/80-retries
+  grep -Fq "Acquire::Retries \"5\";" /etc/apt/apt.conf.d/80-retries
   
   # (d) Verify squid proxy is listening
   (echo > /dev/tcp/127.0.0.1/3128) 2>/dev/null
