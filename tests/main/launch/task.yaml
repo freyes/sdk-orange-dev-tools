@@ -40,34 +40,43 @@ execute: |
     grep -Fx "[$s]" ~/.mini-dinstall.conf || exit 1
   done
   
-  # (f) sbuild config acceptance
+  # (f) Local apt repo is initialized (empty but valid) before any upload
+  test -f /project/local-repo/dists/$VERSION_CODENAME/main/binary-amd64/Packages
+  test -f /project/local-repo/dists/$VERSION_CODENAME/Release
+  
+  # (g) sbuild config acceptance
   sbuild --help >/dev/null 2>&1
   
-  # (g) Set changelog distribution to current suite
+  # (h) Set changelog distribution to current suite
   cd /project/build-test/hello-world
   dch --release --distribution "$VERSION_CODENAME" --force-distribution ""
   cd /project/build-test/hello-dep
   dch --release --distribution "$VERSION_CODENAME" --force-distribution ""
   
-  # (h) Create chroot
+  # (i) Create chroot
   create-sbuild-chroots "$VERSION_CODENAME"
   
-  # (i) Build hello-world
+  # (j) Regression (issue #4): sbuild must succeed before the first dput
+  # upload, i.e. apt-get update in the chroot must tolerate the empty local
+  # repo instead of aborting at the apt-get-update stage
   cd /project/build-test/hello-world
+  sbuild --dist=$VERSION_CODENAME --no-clean-source
+  
+  # (k) Build hello-world
   dpkg-buildpackage -us -uc
   
-  # (j) Upload to local repo
+  # (l) Upload to local repo
   dput local /project/build-test/hello-world_0.1_*.changes
   
-  # (k) Verify Packages index
+  # (m) Verify Packages index
   test -f /project/local-repo/dists/$VERSION_CODENAME/main/binary-amd64/Packages
   
-  # (l) Build hello-dep against local repo
+  # (n) Build hello-dep against local repo
   cd /project/build-test/hello-dep
   # /project/local-repo is bind-mounted into the chroot via ~/.sbuildrc
   sbuild --dist=$VERSION_CODENAME --no-clean-source --chroot-setup-commands="dpkg -i /project/local-repo/$VERSION_CODENAME/hello-world_0.1_all.deb"
   
-  # (m) Assert hello-dep .deb produced
+  # (o) Assert hello-dep .deb produced
   test -f /project/build-test/hello-dep_*.deb
   '
 

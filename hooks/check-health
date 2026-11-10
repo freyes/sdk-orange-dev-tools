@@ -43,5 +43,13 @@ if [ ! -d /project/local-repo/mini-dinstall/incoming ]; then
     exit 0
 fi
 
+# Check local repo is initialized as a valid apt repo for the host series,
+# otherwise sbuild chroots fail at the apt-get-update stage (issue #4)
+. /etc/os-release
+if [ ! -f "/project/local-repo/dists/$VERSION_CODENAME/main/binary-amd64/Packages" ]; then
+    workshopctl set-health error "/project/local-repo apt index missing for $VERSION_CODENAME"
+    exit 0
+fi
+
 # All checks passed
 workshopctl set-health okay

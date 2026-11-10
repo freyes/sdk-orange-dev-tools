@@ -77,6 +77,11 @@ done
 # --- (d) Create local repo directories ---
 mkdir -p /project/local-repo/mini-dinstall/incoming
 
+# Initialize the repo as a valid (empty) apt repository for all supported
+# series, so apt-get update inside sbuild chroots succeeds even before the
+# first dput upload (https://github.com/freyes/sdk-orange-dev-tools/issues/4)
+"$SDK/bin/generate-local-repo-index"
+
 # --- (e) Append to /project/.gitignore (idempotent) ---
 touch /project/.gitignore
 grep -qxF 'local-repo/' /project/.gitignore || echo 'local-repo/' >> /project/.gitignore
